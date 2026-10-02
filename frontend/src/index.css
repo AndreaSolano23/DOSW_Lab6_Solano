@@ -1,0 +1,76 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  background: #f4f5f7;
+  color: #1f2933;
+}
+
+.tasks-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.task-form input,
+.task-form textarea,
+.task-form select {
+  padding: 8px;
+  font-size: 1rem;
+}
+
+.form-actions,
+.task-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.task-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+.badge {
+  display: inline-block;
+  background: #e4e7eb;
+  border-radius: 12px;
+  padding: 2px 10px;
+  margin-right: 6px;
+  font-size: 0.8rem;
+}
+
+.due-date {
+  font-size: 0.85rem;
+  color: #616e7c;
+}
+
+.error {
+  color: #b42318;
+}
+
+button {
+  cursor: pointer;
+  padding: 6px 12px;
+}
