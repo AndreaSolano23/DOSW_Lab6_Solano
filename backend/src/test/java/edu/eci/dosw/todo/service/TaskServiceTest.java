@@ -106,4 +106,20 @@ class TaskServiceTest {
 
         verify(taskRepository, never()).delete(any());
     }
+
+    @Test
+void create_deberiaRespetarPrioridadEnviada() {
+    TaskCreateRequest request = new TaskCreateRequest(
+            "Tarea urgente", "Descripción", TaskPriority.HIGH, LocalDate.now()
+    );
+    when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> {
+        TaskEntity saved = invocation.getArgument(0);
+        saved.setId(3L);
+        return saved;
+    });
+
+    TaskResponse response = taskService.create(request);
+
+    assertThat(response.priority()).isEqualTo(TaskPriority.HIGH);
+}
 }
