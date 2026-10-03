@@ -1,11 +1,10 @@
 # Informe de Laboratorio 6 — ToDo Full Stack
 
 ## 1. Integrantes
-- [Tu nombre completo]
-- [Nombres de tus compañeras de equipo]
+- Paula Andrea Solano Morales 
 
 ## 2. Repositorio
-https://github.com/DOSW-2026-2/Lab6-G4-AppToDo
+https://github.com/AndreaSolano23/DOSW_Lab6_Solano.git
 
 ## 3. Descripción de la solución
 Aplicación ToDo full stack con backend en Spring Boot (Java 21, Spring Boot 3.3.4),
