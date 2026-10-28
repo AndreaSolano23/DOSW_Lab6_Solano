@@ -1,6 +1,7 @@
 package edu.eci.dosw.todo.repository;
 
 import edu.eci.dosw.todo.entity.TaskEntity;
+import edu.eci.dosw.todo.entity.TaskStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,4 +16,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long> {
 
     // Una tarea por id, solo si pertenece a ese usuario
     Optional<TaskEntity> findByIdAndOwnerId(Long id, Long ownerId);
+
+    // Para el resumen administrativo (solo conteos)
+    long countByStatus(TaskStatus status);
 }
