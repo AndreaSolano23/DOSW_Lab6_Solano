@@ -1,21 +1,21 @@
 package edu.eci.dosw.todo.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.eci.dosw.todo.config.SecurityConfig;
 import edu.eci.dosw.todo.dto.TaskCreateRequest;
 import edu.eci.dosw.todo.dto.TaskResponse;
 import edu.eci.dosw.todo.entity.TaskPriority;
 import edu.eci.dosw.todo.entity.TaskStatus;
 import edu.eci.dosw.todo.exception.TaskNotFoundException;
 import edu.eci.dosw.todo.service.TaskService;
-import edu.eci.dosw.todo.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,13 +23,14 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TaskController.class)
 @Import(SecurityConfig.class)
-@WithMockUser
 class TaskControllerTest {
 
     @Autowired
@@ -41,6 +42,11 @@ class TaskControllerTest {
     @MockBean
     private TaskService taskService;
 
+    // Usuario autenticado con id 1 (claim "sub" del JWT)
+    private static RequestPostProcessor authenticatedUser() {
+        return jwt().jwt(token -> token.subject("1"));
+    }
+
     private TaskResponse sampleResponse() {
         return new TaskResponse(
                 1L, "Estudiar para el parcial", "Descripción",
@@ -50,28 +56,30 @@ class TaskControllerTest {
     }
 
     @Test
-    void findAll_deberiaRetornar200() throws Exception {
-        when(taskService.findAll()).thenReturn(List.of(sampleResponse()));
+    void findAll_deberiaRetornar200_yUsarElUsuarioDelToken() throws Exception {
+        when(taskService.findAll(1L)).thenReturn(List.of(sampleResponse()));
 
-        mockMvc.perform(get("/api/v1/tasks"))
+        mockMvc.perform(get("/api/v1/tasks").with(authenticatedUser()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1));
+
+        verify(taskService).findAll(1L);
     }
 
     @Test
     void findById_deberiaRetornar200_cuandoExiste() throws Exception {
-        when(taskService.findById(1L)).thenReturn(sampleResponse());
+        when(taskService.findById(1L, 1L)).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/api/v1/tasks/1"))
+        mockMvc.perform(get("/api/v1/tasks/1").with(authenticatedUser()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Estudiar para el parcial"));
     }
 
     @Test
-    void findById_deberiaRetornar404_cuandoNoExiste() throws Exception {
-        when(taskService.findById(99L)).thenThrow(new TaskNotFoundException(99L));
+    void findById_deberiaRetornar404_cuandoNoExisteOEsAjena() throws Exception {
+        when(taskService.findById(1L, 99L)).thenThrow(new TaskNotFoundException(99L));
 
-        mockMvc.perform(get("/api/v1/tasks/99"))
+        mockMvc.perform(get("/api/v1/tasks/99").with(authenticatedUser()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -81,9 +89,10 @@ class TaskControllerTest {
         TaskCreateRequest request = new TaskCreateRequest(
                 "Nueva tarea", "Descripción", TaskPriority.HIGH, LocalDate.now()
         );
-        when(taskService.create(any())).thenReturn(sampleResponse());
+        when(taskService.create(eq(1L), any())).thenReturn(sampleResponse());
 
         mockMvc.perform(post("/api/v1/tasks")
+                        .with(authenticatedUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated());
@@ -96,6 +105,7 @@ class TaskControllerTest {
         );
 
         mockMvc.perform(post("/api/v1/tasks")
+                        .with(authenticatedUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -103,9 +113,10 @@ class TaskControllerTest {
 
     @Test
     void update_deberiaRetornar200_cuandoExiste() throws Exception {
-        when(taskService.update(eq(1L), any())).thenReturn(sampleResponse());
+        when(taskService.update(eq(1L), eq(1L), any())).thenReturn(sampleResponse());
 
         mockMvc.perform(put("/api/v1/tasks/1")
+                        .with(authenticatedUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"Actualizada","description":"desc",
@@ -116,9 +127,10 @@ class TaskControllerTest {
 
     @Test
     void update_deberiaRetornar404_cuandoNoExiste() throws Exception {
-        when(taskService.update(eq(99L), any())).thenThrow(new TaskNotFoundException(99L));
+        when(taskService.update(eq(1L), eq(99L), any())).thenThrow(new TaskNotFoundException(99L));
 
         mockMvc.perform(put("/api/v1/tasks/99")
+                        .with(authenticatedUser())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"X","description":"Y",
@@ -129,7 +141,9 @@ class TaskControllerTest {
 
     @Test
     void delete_deberiaRetornar204_cuandoExiste() throws Exception {
-        mockMvc.perform(delete("/api/v1/tasks/1"))
+        mockMvc.perform(delete("/api/v1/tasks/1").with(authenticatedUser()))
                 .andExpect(status().isNoContent());
+
+        verify(taskService).delete(1L, 1L);
     }
 }
