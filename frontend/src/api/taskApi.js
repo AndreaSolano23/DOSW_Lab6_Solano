@@ -1,37 +1,22 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1/tasks'
+import { API_URL, authFetch, handleResponse } from './http'
 
-async function handleResponse(response) {
-  if (!response.ok) {
-    let message = `Request failed with status ${response.status}`
-    try {
-      const body = await response.json()
-      if (body.message) {
-        message = body.message
-      }
-    } catch {
-      // The response had no JSON body; keep the default message.
-    }
-    throw new Error(message)
-  }
-  if (response.status === 204) {
-    return null
-  }
-  return response.json()
-}
+const BASE_URL = import.meta.env.VITE_API_URL ?? `${API_URL}/tasks`
+
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 export async function getTasks() {
-  return handleResponse(await fetch(BASE_URL))
+  return handleResponse(await authFetch(BASE_URL))
 }
 
 export async function getTask(id) {
-  return handleResponse(await fetch(`${BASE_URL}/${id}`))
+  return handleResponse(await authFetch(`${BASE_URL}/${id}`))
 }
 
 export async function createTask(task) {
   return handleResponse(
-    await fetch(BASE_URL, {
+    await authFetch(BASE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: JSON_HEADERS,
       body: JSON.stringify(task),
     }),
   )
@@ -39,14 +24,14 @@ export async function createTask(task) {
 
 export async function updateTask(id, task) {
   return handleResponse(
-    await fetch(`${BASE_URL}/${id}`, {
+    await authFetch(`${BASE_URL}/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: JSON_HEADERS,
       body: JSON.stringify(task),
     }),
   )
 }
 
 export async function deleteTask(id) {
-  return handleResponse(await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' }))
+  return handleResponse(await authFetch(`${BASE_URL}/${id}`, { method: 'DELETE' }))
 }

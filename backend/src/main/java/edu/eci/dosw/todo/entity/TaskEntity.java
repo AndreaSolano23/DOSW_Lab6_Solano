@@ -12,13 +12,13 @@ public class TaskEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)    // la BD genera el id (autoincremental)
     private Long id;
 
-    @Column(nullable = false, length = 120)  
+    @Column(nullable = false, length = 120)
     private String title;
 
-    @Column(length = 500) 
+    @Column(length = 500)
     private String description;
 
-    @Enumerated(EnumType.STRING)      
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TaskStatus status;
 
@@ -26,13 +26,18 @@ public class TaskEntity {
     @Column(nullable = false)
     private TaskPriority priority;
 
-    @Column(name = "due_date")         
+    @Column(name = "due_date")
     private LocalDate dueDate;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    public TaskEntity() {}            
+    // Dueño de la tarea (un usuario tiene muchas tareas)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity owner;
+
+    public TaskEntity() {}
 
     // Getters y setters
     public Long getId() { return id; }
@@ -55,4 +60,7 @@ public class TaskEntity {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public UserEntity getOwner() { return owner; }
+    public void setOwner(UserEntity owner) { this.owner = owner; }
 }
