@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Controlador: recibe el servicio por inyección de dependencias de Spring.
+         No es un dato mutable expuesto. -->
+    <Match>
+        <Class name="edu.eci.dosw.todo.controller.TaskController"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Entidad JPA: owner es una relación @ManyToOne LAZY.
+         Copiarla rompería el proxy y la identidad de Hibernate. -->
+    <Match>
+        <Class name="edu.eci.dosw.todo.entity.TaskEntity"/>
+        <Method name="~(get|set)Owner"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>
