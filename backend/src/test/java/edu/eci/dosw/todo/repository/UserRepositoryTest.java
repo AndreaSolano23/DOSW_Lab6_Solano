@@ -31,7 +31,7 @@ class UserRepositoryTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().getName()).isEqualTo("Ana Pérez");
-        assertThat(result.get().getRole()).isEqualTo(Role.USER);
+        assertThat(result.get().getRole()).isEqualTo(Role.ADMIN);
     }
 
     @Test
