@@ -1,6 +1,6 @@
 import { getAccessToken, notifyUnauthorized } from './session'
 
-export const API_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api/v1'
+export const API_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
 
 // Convierte la respuesta en datos, o lanza un Error con un mensaje legible.
 export async function handleResponse(response) {
