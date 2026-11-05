@@ -3,7 +3,7 @@ import * as taskApi from '../../../api/taskApi'
 
 export function useTasks() {
   const [tasks, setTasks] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   const loadTasks = useCallback(async () => {
@@ -54,9 +54,32 @@ export function useTasks() {
     [loadTasks],
   )
 
+    // Carga inicial: el estado se actualiza dentro de callbacks asíncronos,
+  // no de forma síncrona en el cuerpo del efecto.
   useEffect(() => {
-    loadTasks()
-  }, [loadTasks])
+    let active = true
+    taskApi
+      .getTasks()
+      .then((data) => {
+        if (active) {
+          setTasks(data)
+          setError(null)
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setError(err.message)
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false)
+        }
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   return { tasks, loading, error, loadTasks, addTask, editTask, removeTask }
 }
