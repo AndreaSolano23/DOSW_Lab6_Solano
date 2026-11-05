@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { setAccessToken } from './api/session'
 import App from './App'
 
-const API = 'http://localhost:8080/api/v1'
+const API = '/api/v1'
 
 const ana = { id: 1, name: 'Ana Perez', email: 'ana@example.com', role: 'USER' }
 const luis = { id: 2, name: 'Luis Gomez', email: 'luis@example.com', role: 'USER' }
