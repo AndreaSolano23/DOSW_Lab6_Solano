@@ -9,7 +9,9 @@ RUN mvn -B -ntp -DskipTests package
 
 # Etapa 2: runtime compacto (sin Maven ni fuentes)
 FROM eclipse-temurin:21-jre
+RUN groupadd --system app && useradd --system --gid app --no-create-home app
 WORKDIR /app
 COPY --from=build /workspace/target/*.jar app.jar
+USER app
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
