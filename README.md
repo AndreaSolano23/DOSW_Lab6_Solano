@@ -627,3 +627,60 @@ Las pruebas del backend no necesitan `JWT_SECRET`: usan una llave de prueba prop
 
 Pruebas adicionales de seguridad: token firmado con otra llave que dice ser `ADMIN` y token con el `role` editado de `USER` a `ADMIN` (ambos `401`), registro público que no puede crear `ADMIN`, y validación `400` en creación y edición de tareas.
 
+
+---
+
+## 11. CI/CD multinube (Azure y AWS)
+
+> Esta sección documenta el pipeline de integración y despliegue del laboratorio CI/CD multinube. Los diagramas C4 de contenedores y de despliegue, el flujo CI/CD, la tabla de pipelines y la guía de Compose local se integran desde el trabajo del resto del equipo.
+
+### Comparación Azure y AWS
+
+Las dos nubes ejecutan exactamente el mismo stack (`infra/docker-compose.prod.yml`: PostgreSQL, API, frontend y Caddy) con las mismas imágenes de GHCR etiquetadas por SHA. Lo único que cambia es la máquina que lo aloja y la configuración propia de cada entorno.
+
+| Aspecto | Azure | AWS Academy |
+|---|---|---|
+| Dónde corre Docker Compose | Máquina virtual de Azure | Instancia EC2 |
+| Runner de GitHub | `azure-todo` | `aws-todo` |
+| Workflow | `CD - Azure VM` | `CD - AWS Academy EC2` (`.github/workflows/deploy-aws.yml`) |
+| Environment de GitHub | `azure-lab` | `aws-lab` |
+| Secretos | `AZURE_DB_PASSWORD`, `AZURE_JWT_SECRET` | `AWS_DB_PASSWORD`, `AWS_JWT_SECRET` |
+| Variable de dominio | `AZURE_DOMAIN` | `AWS_DOMAIN` |
+| Carpeta de despliegue | `~/todo-azure` | `~/todo-aws` |
+| Tamaño de la máquina | Standard_B2s (2 vCPU, 4 GiB) | t3.medium (2 vCPU, 4 GiB) |
+| Usuario SSH | `azureuser` | `ubuntu` |
+| Cómo se apaga | Stop hasta ver "Stopped (deallocated)" | End Lab en el Learner Lab |
+| ¿Se reconstruye la imagen en la máquina? | No, se descarga de GHCR | No, se descarga de GHCR |
+| Almacenamiento de PostgreSQL | Volumen Docker local a la VM | Volumen Docker local a la EC2 |
+
+**Qué no cambia:** el código, las dos imágenes (`-api` y `-web`) y su etiqueta SHA, el compose, el Caddyfile, los scripts SQL de `database/`, la verificación posterior al despliegue (`/health` con 200 y `/api/v1/tasks` sin token con 401) y las reglas de seguridad (solo 80 y 443 abiertos al público, nunca 5432 ni 8080).
+
+**Justificación de la arquitectura:**
+
+- **Máquinas virtuales con Docker Compose** en vez de servicios gestionados: el laboratorio busca entender el despliegue de punta a punta con las mismas piezas en cualquier nube, y las cuentas educativas limitan los servicios disponibles.
+- **Runners self-hosted dentro de cada máquina:** el despliegue ocurre en el propio servidor, así que el workflow no necesita credenciales de la nube (ni claves de acceso de AWS ni de Azure).
+- **Imágenes inmutables por SHA en GHCR:** garantizan que ambas nubes ejecutan el mismo commit verificado por el CI y permiten volver a una versión anterior cambiando `IMAGE_TAG`.
+- **Bases de datos independientes por nube:** cada stack tiene su propio volumen y sus propios secretos. Una tarea creada en una nube no aparece en la otra, y un token JWT de una nube no es válido en la otra.
+- **Caddy con HTTPS automático** sobre un dominio `IP.sslip.io`, sin depender de un dominio propio.
+
+### Evidencias y video
+
+Las evidencias están en [`docs/ci-cd-evidencias/`](docs/ci-cd-evidencias/).
+
+**Integración continua y calidad**
+
+- Pruebas del backend: [`01-backend-tests.png`](docs/ci-cd-evidencias/01-backend-tests.png)
+- Cobertura de JaCoCo con umbral: [`02-jacoco-reporte.png`](docs/ci-cd-evidencias/02-jacoco-reporte.png) y [`03-jacoco-umbral-80.png`](docs/ci-cd-evidencias/03-jacoco-umbral-80.png)
+- Análisis estático de Java: [`04-spotbugs-resultado.png`](docs/ci-cd-evidencias/04-spotbugs-resultado.png)
+- Pruebas y cobertura del frontend: [`05-frontend-tests-cobertura.png`](docs/ci-cd-evidencias/05-frontend-tests-cobertura.png) y [`06-vitest-reporte-html.png`](docs/ci-cd-evidencias/06-vitest-reporte-html.png)
+- Análisis estático de React con ESLint: [`19-eslint-hallazgo.png`](docs/ci-cd-evidencias/19-eslint-hallazgo.png), [`20-eslint-limpio.png`](docs/ci-cd-evidencias/20-eslint-limpio.png) y [`21-ci-log-eslint.png`](docs/ci-cd-evidencias/21-ci-log-eslint.png) (las capturas 07 y 18 corresponden a la herramienta anterior, oxlint)
+- Pipeline en verde: [`11-ci-jobs-verdes.png`](docs/ci-cd-evidencias/11-ci-jobs-verdes.png)
+- Fallo controlado y corrección: [`12-ci-fallo-controlado-rojo.png`](docs/ci-cd-evidencias/12-ci-fallo-controlado-rojo.png) y [`13-ci-corregido-verde.png`](docs/ci-cd-evidencias/13-ci-corregido-verde.png)
+
+**Contenedores e imágenes**
+
+- Construcción de las imágenes: [`08-docker-build-api.png`](docs/ci-cd-evidencias/08-docker-build-api.png) y [`09-docker-build-web.png`](docs/ci-cd-evidencias/09-docker-build-web.png)
+- Validación del compose productivo: [`22-compose-config-ok.png`](docs/ci-cd-evidencias/22-compose-config-ok.png)
+- Publicación en `main`: [`23-ci-main-publica-imagenes.png`](docs/ci-cd-evidencias/23-ci-main-publica-imagenes.png)
+- Imágenes en GHCR con etiqueta SHA: [`24a-ghcr-api.png`](docs/ci-cd-evidencias/24a-ghcr-api.png) y [`24b-ghcr-web.png`](docs/ci-cd-evidencias/24b-ghcr-web.png)
+

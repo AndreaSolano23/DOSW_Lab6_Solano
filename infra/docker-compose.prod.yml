@@ -46,6 +46,8 @@ services:
       - "443:443"
     environment:
       TODO_DOMAIN: ${TODO_DOMAIN:?Falta TODO_DOMAIN}
+      SPRING_JPA_SHOW_SQL: "false"
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
